@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall" : "bower install && npm run makeDist",
-    "makeDist" : "vulcanize -o dist/index.htm src/index.htm"
+    "makeDist" : "vulcanize -o dist/index.htm src/index.htm --csp"
   },
   "repository": {
     "type": "git",
