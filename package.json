@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall" : "npm run makeDist",
+    "postinstall" : "bower install && npm run makeDist",
     "makeDist" : "vulcanize -o dist/index.htm src/index.htm"
   },
   "repository": {
