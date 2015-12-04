@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
-    <title>paper-input demo</title>
+    <title>Questionnaire</title>
 
     <script src="../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
 
@@ -25,17 +25,17 @@
     <link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html">
     <link rel="import" href="../bower_components/paper-radio-button/paper-radio-button.html">
     <link rel="import" href="../bower_components/paper-radio-group/paper-radio-group.html">
+    <link rel="import" href="../bower_components/neon-animation/neon-animated-pages.html">
+    <link rel="import" href="../bower_components/neon-animation/neon-animatable.html">
+    <link rel="import" href="../bower_components/neon-animation/neon-animations.html">
+    <link rel="import" href="../bower_components/paper-fab/paper-fab.html">
     <link rel="import" href="../bower_components/paper-styles/color.html">
     <style is="custom-style">
       html, body{
         font-family: 'Roboto';
-      }
-      paper-button.blue {
-        color: var(--paper-light-blue-500);
-        --paper-button-flat-focus-color: var(--paper-light-blue-50);
-      }
-      paper-button.blue:hover {
-        background: var(--paper-light-blue-50);
+        overflow: hidden;
+        @apply(--layout-fullbleed);
+        @apply(--layout-vertical);
       }
 
       ul {
@@ -48,46 +48,155 @@
 
       }
 
+      ol > li {
+        display: none;
+        opacity: 0;
+        transition: all 2s linear;
+      }
+
+      ol > li.visible{
+        opacity: 1;
+        display: block;
+      }
+
       paper-material{
         padding:2%;
       }
+
+      paper-fab.gray {
+  			--paper-fab-background: var(--paper-grey-500);
+  			--paper-fab-keyboard-focus-background: var(--paper-grey-500);
+  		}
+
+      paper-fab.blue {
+  			--paper-fab-background: var(--paper-light-blue-500);
+  			--paper-fab-keyboard-focus-background: var(--paper-light-blue-500);
+  		}
+
+  		paper-toolbar {
+  			--paper-toolbar-background: var(--paper-light-blue-500);
+  		}
+
+      .bayerLogo{
+        position: absolute;
+        right:2%;
+        top:30%;
+        width:90px;
+        height:90px;
+        background-color: #fff;
+        border-radius: 50%;
+        box-shadow: 2px 2px 5px #333;
+      }
+
+      neon-animated-pages {
+        @apply(--layout-flex);
+        @apply(--layout-vertical);
+      }
+
+      neon-animatable label{
+        display: block;
+        text-align: center;
+      }
+
+      .container {
+        @apply(--layout-flex);
+        padding:2%;
+      }
+
+      .horizontal {
+        @apply(--layout-horizontal);
+      }
+      .flexchild {
+        @apply(--layout-flex);
+      }
     </style>
   </head>
-  <body class="fullbleed vertical layout">
-    <!-- paper-header-panel must have an explicit height -->
-    <paper-header-panel class="flex">
-      <paper-toolbar>
-        <div>Questionario con risposte</div>
-      </paper-toolbar>
-    </paper-header-panel>
-    <div>
-      <form is="iron-form" id="form" method="post" action="/form/handler">
-        <paper-material>
-          <ol>
-            <li>
-              <label>La domanda da fare come risposte multiple?</label>
-              <ul>
-                <li><paper-checkbox>Risposta 1</paper-checkbox></li>
-                <li><paper-checkbox>Risposta 2</paper-checkbox></li>
-                <li><paper-checkbox>Risposta 3</paper-checkbox></li>
-              </ul>
-            </li>
-            <li>
-              <label>La domanda da fare come risposte singole?</label><br />
-              <paper-radio-group>
-                <paper-radio-button name="first">First</paper-radio-button><br />
-                <paper-radio-button name="second">Second</paper-radio-button><br />
-                <paper-radio-button name="third">Third</paper-radio-button>
-              </paper-radio-group>
-            </li>
-          </ol>
-          <paper-button class="blue ripple">
-            <iron-icon icon="check"></iron-icon>
-            Conferma
-          </paper-button>
-        </paper-material>
-      </form>
+  <body>
+    <template is="dom-bind">
+        <!-- paper-header-panel must have an explicit height -->
+        <div>
+        <!--<paper-header-panel class="flex">-->
+          <paper-toolbar class="medium-tall">
+            <div class="bottom">
+              <span class="middle title">Bayer: Science For A Better Life</span>
+            </div>
+            <img class="bayerLogo" src="Bayer-Logo.svg" />
+          </paper-toolbar>
+        <!--</paper-header-panel>-->
+        </div>
+        <div class="container">
+          <form is="iron-form" id="form" class="flex" method="post" action="/form/handler">
+            <input type="hidden" name="curdom" id="curdom" value="">
+              <neon-animated-pages id="pages" selected="[[selected]]" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
+                <neon-animatable>
+                  <label>Caro Vet, stiamo conducendo un’indagine su come il Vet valuta i prodotti antiparassitari esterni in vista di strategie (di comunicazione?) future. Ti va di partecipare ad un breve questionario? (Anonimo, riservato …)</label>
+                </neon-animatable>
+                <neon-animatable>
+                  <label>Spot on, Collari e Compresse: quali formulazioni preferisci in ordine di preferenza per la protezione del cane dai parassiti esterni?</label>
+                  <ul>
+                    <li><paper-input class="short" label="Spot on" 		type="number" id="ris_11"></paper-input></li>
+                    <li><paper-input class="short" label="Collari" 		type="number"id="ris_11"></paper-input></li>
+                    <li><paper-input class="short" label="Compresse" 	type="number"id=""></paper-input></li>
+                  </ul>
+                </neon-animatable>
+                <neon-animatable>
+                  <label>La domanda da fare come risposte multiple?</label>
+                  <ul>
+                    <li><paper-checkbox>Risposta 1</paper-checkbox></li>
+                    <li><paper-checkbox>Risposta 2</paper-checkbox></li>
+                    <li><paper-checkbox>Risposta 3</paper-checkbox></li>
+                  </ul>
+                </neon-animatable>
+                <neon-animatable>
+                  <label>La domanda da fare come risposte singole?</label><br />
+                  <paper-radio-group>
+                    <paper-radio-button name="first">First</paper-radio-button><br />
+                    <paper-radio-button name="second">Second</paper-radio-button><br />
+                    <paper-radio-button name="third">Third</paper-radio-button>
+                  </paper-radio-group>
+                </neon-animatable>
+                <neon-animatable>
+                  <label>FINE<br />Fai il submit!</label>
 
-    </div>
+                </neon-animatable>
+              </neon-animated-pages>
+          </form>
+        </div>
+        <div>
+          <div class="horizontal" style="padding:2%;">
+            <div><paper-fab disabled="[[_isPrevDisabled]]" icon="arrow-back" title="Prev" class="gray" on-tap="_onPrevTap"></paper-fab></div>
+            <div class="flexchild"></div>
+            <div><paper-fab disabled="[[_isNextDisabled]]" icon="arrow-forward" title="Next" class="blue" on-tap="_onNextTap"></paper-fab></div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <script>
+      var scope = document.querySelector('template[is="dom-bind"]');
+
+      scope.totalQuestions = 4;
+      scope.selected = 0;
+      scope._isPrevDisabled = true;
+      scope._isNextDisabled = false;
+      scope._onPrevTap = function() {
+        this.entryAnimation = 'slide-from-left-animation';
+        this.exitAnimation = 'slide-right-animation';
+        if (this.selected !== 0){
+          this.selected = this.selected - 1;
+        }
+        this._isPrevDisabled = (this.selected === 0);
+        this._isNextDisabled = false;
+      };
+      scope._onNextTap = function() {
+        this.entryAnimation = 'slide-from-right-animation';
+        this.exitAnimation = 'slide-left-animation';
+        if (this.selected !== this.totalQuestions){
+          this.selected = this.selected + 1;
+        }
+        this._isPrevDisabled = false;
+        this._isNextDisabled = (this.selected == this.totalQuestions);
+      };
+    </script>
   </body>
 </html>

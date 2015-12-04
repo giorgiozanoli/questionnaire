@@ -2,7 +2,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
-    <title>paper-input demo</title>
+    <title>Questionnaire</title>
 
     <script src="../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
 
@@ -11856,16 +11856,1479 @@ information about `paper-radio-button`.
 @demo demo/index.html
 -->
 
+<script>
+  /**
+   * `IronResizableBehavior` is a behavior that can be used in Polymer elements to
+   * coordinate the flow of resize events between "resizers" (elements that control the
+   * size or hidden state of their children) and "resizables" (elements that need to be
+   * notified when they are resized or un-hidden by their parents in order to take
+   * action on their new measurements).
+   * Elements that perform measurement should add the `IronResizableBehavior` behavior to
+   * their element definition and listen for the `iron-resize` event on themselves.
+   * This event will be fired when they become showing after having been hidden,
+   * when they are resized explicitly by another resizable, or when the window has been
+   * resized.
+   * Note, the `iron-resize` event is non-bubbling.
+   *
+   * @polymerBehavior Polymer.IronResizableBehavior
+   * @demo demo/index.html
+   **/
+  Polymer.IronResizableBehavior = {
+    properties: {
+      /**
+       * The closest ancestor element that implements `IronResizableBehavior`.
+       */
+      _parentResizable: {
+        type: Object,
+        observer: '_parentResizableChanged'
+      },
+
+      /**
+       * True if this element is currently notifying its descedant elements of
+       * resize.
+       */
+      _notifyingDescendant: {
+        type: Boolean,
+        value: false
+      }
+    },
+
+    listeners: {
+      'iron-request-resize-notifications': '_onIronRequestResizeNotifications'
+    },
+
+    created: function() {
+      // We don't really need property effects on these, and also we want them
+      // to be created before the `_parentResizable` observer fires:
+      this._interestedResizables = [];
+      this._boundNotifyResize = this.notifyResize.bind(this);
+    },
+
+    attached: function() {
+      this.fire('iron-request-resize-notifications', null, {
+        node: this,
+        bubbles: true,
+        cancelable: true
+      });
+
+      if (!this._parentResizable) {
+        window.addEventListener('resize', this._boundNotifyResize);
+        this.notifyResize();
+      }
+    },
+
+    detached: function() {
+      if (this._parentResizable) {
+        this._parentResizable.stopResizeNotificationsFor(this);
+      } else {
+        window.removeEventListener('resize', this._boundNotifyResize);
+      }
+
+      this._parentResizable = null;
+    },
+
+    /**
+     * Can be called to manually notify a resizable and its descendant
+     * resizables of a resize change.
+     */
+    notifyResize: function() {
+      if (!this.isAttached) {
+        return;
+      }
+
+      this._interestedResizables.forEach(function(resizable) {
+        if (this.resizerShouldNotify(resizable)) {
+          this._notifyDescendant(resizable);
+        }
+      }, this);
+
+      this._fireResize();
+    },
+
+    /**
+     * Used to assign the closest resizable ancestor to this resizable
+     * if the ancestor detects a request for notifications.
+     */
+    assignParentResizable: function(parentResizable) {
+      this._parentResizable = parentResizable;
+    },
+
+    /**
+     * Used to remove a resizable descendant from the list of descendants
+     * that should be notified of a resize change.
+     */
+    stopResizeNotificationsFor: function(target) {
+      var index = this._interestedResizables.indexOf(target);
+
+      if (index > -1) {
+        this._interestedResizables.splice(index, 1);
+        this.unlisten(target, 'iron-resize', '_onDescendantIronResize');
+      }
+    },
+
+    /**
+     * This method can be overridden to filter nested elements that should or
+     * should not be notified by the current element. Return true if an element
+     * should be notified, or false if it should not be notified.
+     *
+     * @param {HTMLElement} element A candidate descendant element that
+     * implements `IronResizableBehavior`.
+     * @return {boolean} True if the `element` should be notified of resize.
+     */
+    resizerShouldNotify: function(element) { return true; },
+
+    _onDescendantIronResize: function(event) {
+      if (this._notifyingDescendant) {
+        event.stopPropagation();
+        return;
+      }
+
+      // NOTE(cdata): In ShadowDOM, event retargetting makes echoing of the
+      // otherwise non-bubbling event "just work." We do it manually here for
+      // the case where Polymer is not using shadow roots for whatever reason:
+      if (!Polymer.Settings.useShadow) {
+        this._fireResize();
+      }
+    },
+
+    _fireResize: function() {
+      this.fire('iron-resize', null, {
+        node: this,
+        bubbles: false
+      });
+    },
+
+    _onIronRequestResizeNotifications: function(event) {
+      var target = event.path ? event.path[0] : event.target;
+
+      if (target === this) {
+        return;
+      }
+
+      if (this._interestedResizables.indexOf(target) === -1) {
+        this._interestedResizables.push(target);
+        this.listen(target, 'iron-resize', '_onDescendantIronResize');
+      }
+
+      target.assignParentResizable(this);
+      this._notifyDescendant(target);
+
+      event.stopPropagation();
+    },
+
+    _parentResizableChanged: function(parentResizable) {
+      if (parentResizable) {
+        window.removeEventListener('resize', this._boundNotifyResize);
+      }
+    },
+
+    _notifyDescendant: function(descendant) {
+      // NOTE(cdata): In IE10, attached is fired on children first, so it's
+      // important not to notify them if the parent is not attached yet (or
+      // else they will get redundantly notified when the parent attaches).
+      if (!this.isAttached) {
+        return;
+      }
+
+      this._notifyingDescendant = true;
+      descendant.notifyResize();
+      this._notifyingDescendant = false;
+    }
+  };
+</script>
+
+<script>
+
+  /**
+   * Use `Polymer.NeonAnimationBehavior` to implement an animation.
+   * @polymerBehavior
+   */
+  Polymer.NeonAnimationBehavior = {
+
+    properties: {
+
+      /**
+       * Defines the animation timing.
+       */
+      animationTiming: {
+        type: Object,
+        value: function() {
+          return {
+            duration: 500,
+            easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+            fill: 'both'
+          }
+        }
+      }
+
+    },
+
+    registered: function() {
+      new Polymer.IronMeta({type: 'animation', key: this.is, value: this.constructor});
+    },
+
+    /**
+     * Do any animation configuration here.
+     */
+    // configure: function(config) {
+    // },
+
+    /**
+     * Returns the animation timing by mixing in properties from `config` to the defaults defined
+     * by the animation.
+     */
+    timingFromConfig: function(config) {
+      if (config.timing) {
+        for (var property in config.timing) {
+          this.animationTiming[property] = config.timing[property];
+        }
+      }
+      return this.animationTiming;
+    },
+
+    /**
+     * Sets `transform` and `transformOrigin` properties along with the prefixed versions.
+     */
+    setPrefixedProperty: function(node, property, value) {
+      var map = {
+        'transform': ['webkitTransform'],
+        'transformOrigin': ['mozTransformOrigin', 'webkitTransformOrigin']
+      };
+      var prefixes = map[property];
+      for (var prefix, index = 0; prefix = prefixes[index]; index++) {
+        node.style[prefix] = value;
+      }
+      node.style[property] = value;
+    },
+
+    /**
+     * Called when the animation finishes.
+     */
+    complete: function() {}
+
+  };
+
+</script>
+<script src="../bower_components/web-animations-js/web-animations-next-lite.min.js"></script>
+<!--
+`<opaque-animation>` makes an element `opacity:1` for the duration of the animation. Used to prevent
+webkit/safari from drawing a frame before an animation for elements that animate from display:none.
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'opaque-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+      node.style.opacity = '0';
+      this._effect = new KeyframeEffect(node, [
+        {'opacity': '1'},
+        {'opacity': '1'}
+      ], this.timingFromConfig(config));
+      return this._effect;
+    },
+
+    complete: function(config) {
+      config.node.style.opacity = '';
+    }
+
+  });
+
+</script>
+<script>
+
+  /**
+   * `Polymer.NeonAnimatableBehavior` is implemented by elements containing animations for use with
+   * elements implementing `Polymer.NeonAnimationRunnerBehavior`.
+   * @polymerBehavior
+   */
+  Polymer.NeonAnimatableBehavior = {
+
+    properties: {
+
+      /**
+       * Animation configuration. See README for more info.
+       */
+      animationConfig: {
+        type: Object
+      },
+
+      /**
+       * Convenience property for setting an 'entry' animation. Do not set `animationConfig.entry`
+       * manually if using this. The animated node is set to `this` if using this property.
+       */
+      entryAnimation: {
+        observer: '_entryAnimationChanged',
+        type: String
+      },
+
+      /**
+       * Convenience property for setting an 'exit' animation. Do not set `animationConfig.exit`
+       * manually if using this. The animated node is set to `this` if using this property.
+       */
+      exitAnimation: {
+        observer: '_exitAnimationChanged',
+        type: String
+      }
+
+    },
+
+    _entryAnimationChanged: function() {
+      this.animationConfig = this.animationConfig || {};
+      if (this.entryAnimation !== 'fade-in-animation') {
+        // insert polyfill hack
+        this.animationConfig['entry'] = [{
+          name: 'opaque-animation',
+          node: this
+        }, {
+          name: this.entryAnimation,
+          node: this
+        }];
+      } else {
+        this.animationConfig['entry'] = [{
+          name: this.entryAnimation,
+          node: this
+        }];
+      }
+    },
+
+    _exitAnimationChanged: function() {
+      this.animationConfig = this.animationConfig || {};
+      this.animationConfig['exit'] = [{
+        name: this.exitAnimation,
+        node: this
+      }];
+    },
+
+    _copyProperties: function(config1, config2) {
+      // shallowly copy properties from config2 to config1
+      for (var property in config2) {
+        config1[property] = config2[property];
+      }
+    },
+
+    _cloneConfig: function(config) {
+      var clone = {
+        isClone: true
+      };
+      this._copyProperties(clone, config);
+      return clone;
+    },
+
+    _getAnimationConfigRecursive: function(type, map, allConfigs) {
+      if (!this.animationConfig) {
+        return;
+      }
+
+      // type is optional
+      var thisConfig;
+      if (type) {
+        thisConfig = this.animationConfig[type];
+      } else {
+        thisConfig = this.animationConfig;
+      }
+
+      if (!Array.isArray(thisConfig)) {
+        thisConfig = [thisConfig];
+      }
+
+      // iterate animations and recurse to process configurations from child nodes
+      if (thisConfig) {
+        for (var config, index = 0; config = thisConfig[index]; index++) {
+          if (config.animatable) {
+            config.animatable._getAnimationConfigRecursive(config.type || type, map, allConfigs);
+          } else {
+            if (config.id) {
+              var cachedConfig = map[config.id];
+              if (cachedConfig) {
+                // merge configurations with the same id, making a clone lazily
+                if (!cachedConfig.isClone) {
+                  map[config.id] = this._cloneConfig(cachedConfig)
+                  cachedConfig = map[config.id];
+                }
+                this._copyProperties(cachedConfig, config);
+              } else {
+                // put any configs with an id into a map
+                map[config.id] = config;
+              }
+            } else {
+              allConfigs.push(config);
+            }
+          }
+        }
+      }
+    },
+
+    /**
+     * An element implementing `Polymer.NeonAnimationRunnerBehavior` calls this method to configure
+     * an animation with an optional type. Elements implementing `Polymer.NeonAnimatableBehavior`
+     * should define the property `animationConfig`, which is either a configuration object
+     * or a map of animation type to array of configuration objects.
+     */
+    getAnimationConfig: function(type) {
+      var map = [];
+      var allConfigs = [];
+      this._getAnimationConfigRecursive(type, map, allConfigs);
+      // append the configurations saved in the map to the array
+      for (var key in map) {
+        allConfigs.push(map[key]);
+      }
+      return allConfigs;
+    }
+
+  };
+
+</script>
+<script>
+
+  /**
+   * `Polymer.NeonAnimationRunnerBehavior` adds a method to run animations.
+   *
+   * @polymerBehavior Polymer.NeonAnimationRunnerBehavior
+   */
+  Polymer.NeonAnimationRunnerBehaviorImpl = {
+
+    properties: {
+
+      _animationMeta: {
+        type: Object,
+        value: function() {
+          return new Polymer.IronMeta({type: 'animation'});
+        }
+      },
+
+      /** @type {?Object} */
+      _player: {
+        type: Object
+      }
+
+    },
+
+    _configureAnimationEffects: function(allConfigs) {
+      var allAnimations = [];
+      if (allConfigs.length > 0) {
+        for (var config, index = 0; config = allConfigs[index]; index++) {
+          var animationConstructor = this._animationMeta.byKey(config.name);
+          if (animationConstructor) {
+            var animation = animationConstructor && new animationConstructor();
+            var effect = animation.configure(config);
+            if (effect) {
+              allAnimations.push({
+                animation: animation,
+                config: config,
+                effect: effect
+              });
+            }
+          } else {
+            console.warn(this.is + ':', config.name, 'not found!');
+          }
+        }
+      }
+      return allAnimations;
+    },
+
+    _runAnimationEffects: function(allEffects) {
+      return document.timeline.play(new GroupEffect(allEffects));
+    },
+
+    _completeAnimations: function(allAnimations) {
+      for (var animation, index = 0; animation = allAnimations[index]; index++) {
+        animation.animation.complete(animation.config);
+      }
+    },
+
+    /**
+     * Plays an animation with an optional `type`.
+     * @param {string=} type
+     * @param {!Object=} cookie
+     */
+    playAnimation: function(type, cookie) {
+      var allConfigs = this.getAnimationConfig(type);
+      if (!allConfigs) {
+        return;
+      }
+      var allAnimations = this._configureAnimationEffects(allConfigs);
+      var allEffects = allAnimations.map(function(animation) {
+        return animation.effect;
+      });
+
+      if (allEffects.length > 0) {
+        this._player = this._runAnimationEffects(allEffects);
+        this._player.onfinish = function() {
+          this._completeAnimations(allAnimations);
+
+          if (this._player) {
+            this._player.cancel();
+            this._player = null;
+          }
+
+          this.fire('neon-animation-finish', cookie, {bubbles: false});
+        }.bind(this);
+
+      } else {
+        this.fire('neon-animation-finish', cookie, {bubbles: false});
+      }
+    },
+
+    /**
+     * Cancels the currently running animation.
+     */
+    cancelAnimation: function() {
+      if (this._player) {
+        this._player.cancel();
+      }
+    }
+  };
+
+  /** @polymerBehavior Polymer.NeonAnimationRunnerBehavior */
+  Polymer.NeonAnimationRunnerBehavior = [
+    Polymer.NeonAnimatableBehavior,
+    Polymer.NeonAnimationRunnerBehaviorImpl
+  ];
+</script>
+<!--
+Material design: [Meaningful transitions](https://www.google.com/design/spec/animation/meaningful-transitions.html)
+
+`neon-animated-pages` manages a set of pages and runs an animation when switching between them. Its
+children pages should implement `Polymer.NeonAnimatableBehavior` and define `entry` and `exit`
+animations to be run when switching to or switching out of the page.
+
+@group Neon Elements
+@element neon-animated-pages
+@demo demo/index.html
+-->
+
+<!--
+`<neon-animatable>` is a simple container element implementing `Polymer.NeonAnimatableBehavior`. This is a convenience element for use with `<neon-animated-pages>`.
+
+```
+<neon-animated-pages selected="0"
+                     entry-animation="slide-from-right-animation"
+                     exit-animation="slide-left-animation">
+  <neon-animatable>1</neon-animatable>
+  <neon-animatable>2</neon-animatable>
+</neon-animated-pages>
+```
+-->
+
+<!--
+`<cascaded-animation>` applies an animation on an array of elements with a delay between each.
+the delay defaults to 50ms.
+
+Configuration:
+```
+{
+  name: 'cascaded-animation',
+  animation: <animation-name>,
+  nodes: <array-of-nodes>,
+  nodedelay: <node-delay-in-ms>,
+  timing: <animation-timing>
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'cascaded-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    properties: {
+
+      /** @type {!Polymer.IronMeta} */
+      _animationMeta: {
+        type: Object,
+        value: function() {
+          return new Polymer.IronMeta({type: 'animation'});
+        }
+      }
+
+    },
+
+    /**
+     * @param {{
+     *   animation: string,
+     *   nodes: !Array<!Element>,
+     *   nodeDelay: (number|undefined),
+     *   timing: (Object|undefined)
+     *  }} config
+     */
+    configure: function(config) {
+      var animationConstructor = /** @type {Function} */ (
+          this._animationMeta.byKey(config.animation));
+      if (!animationConstructor) {
+        console.warn(this.is + ':', 'constructor for', config.animation, 'not found!');
+        return;
+      }
+
+      this._animations = [];
+      var nodes = config.nodes;
+      var effects = [];
+      var nodeDelay = config.nodeDelay || 50;
+
+      config.timing = config.timing || {};
+      config.timing.delay = config.timing.delay || 0;
+
+      var oldDelay = config.timing.delay;
+      for (var node, index = 0; node = nodes[index]; index++) {
+        config.timing.delay += nodeDelay;
+        config.node = node;
+
+        var animation = new animationConstructor();
+        var effect = animation.configure(config);
+
+        this._animations.push(animation);
+        effects.push(effect);
+      }
+      config.timing.delay = oldDelay;
+
+      this._effect = new GroupEffect(effects);
+      return this._effect;
+    },
+
+    complete: function() {
+      for (var animation, index = 0; animation = this._animations[index]; index++) {
+        animation.complete(animation.config);
+      }
+    }
+
+  });
+
+</script>
+<!--
+`<fade-in-animation>` animates the opacity of an element from 0 to 1.
+
+Configuration:
+```
+{
+  name: 'fade-in-animation',
+  node: <node>
+  timing: <animation-timing>
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'fade-in-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+      this._effect = new KeyframeEffect(node, [
+        {'opacity': '0'},
+        {'opacity': '1'}
+      ], this.timingFromConfig(config));
+      return this._effect;
+    }
+
+  });
+
+</script>
+<!--
+`<fade-out-animation>` animates the opacity of an element from 1 to 0.
+
+Configuration:
+```
+{
+  name: 'fade-out-animation',
+  node: <node>
+  timing: <animation-timing>
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'fade-out-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+      this._effect = new KeyframeEffect(node, [
+        {'opacity': '1'},
+        {'opacity': '0'}
+      ], this.timingFromConfig(config));
+      return this._effect;
+    }
+
+  });
+
+</script>
+<script>
+
+  /**
+   * Use `Polymer.NeonSharedElementAnimationBehavior` to implement shared element animations.
+   * @polymerBehavior Polymer.NeonSharedElementAnimationBehavior
+   */
+  Polymer.NeonSharedElementAnimationBehaviorImpl = {
+
+    properties: {
+
+      /**
+       * Cached copy of shared elements.
+       */
+      sharedElements: {
+        type: Object
+      }
+
+    },
+
+    /**
+     * Finds shared elements based on `config`.
+     */
+    findSharedElements: function(config) {
+      var fromPage = config.fromPage;
+      var toPage = config.toPage;
+      if (!fromPage || !toPage) {
+        console.warn(this.is + ':', !fromPage ? 'fromPage' : 'toPage', 'is undefined!');
+        return null;
+      };
+
+      if (!fromPage.sharedElements || !toPage.sharedElements) {
+        console.warn(this.is + ':', 'sharedElements are undefined for', !fromPage.sharedElements ? fromPage : toPage);
+        return null;
+      };
+
+      var from = fromPage.sharedElements[config.id]
+      var to = toPage.sharedElements[config.id];
+
+      if (!from || !to) {
+        console.warn(this.is + ':', 'sharedElement with id', config.id, 'not found in', !from ? fromPage : toPage);
+        return null;
+      }
+
+      this.sharedElements = {
+        from: from,
+        to: to
+      };
+      return this.sharedElements;
+    }
+
+  };
+
+  /** @polymerBehavior Polymer.NeonSharedElementAnimationBehavior */
+  Polymer.NeonSharedElementAnimationBehavior = [
+    Polymer.NeonAnimationBehavior,
+    Polymer.NeonSharedElementAnimationBehaviorImpl
+  ];
+
+</script>
+<!--
+`<hero-animation>` is a shared element animation that scales and transform an element such that it
+appears to be shared between two pages. Use this in `<neon-animated-pages>`. The source page
+should use this animation in an 'exit' animation and set the `fromPage` configuration property to
+itself, and the destination page should use this animation in an `entry` animation and set the
+`toPage` configuration property to itself. They should also define the hero elements in the
+`sharedElements` property (not a configuration property, see
+`Polymer.NeonSharedElementAnimatableBehavior`).
+
+Configuration:
+```
+{
+  name: 'hero-animation',
+  id: <shared-element-id>,
+  timing: <animation-timing>,
+  toPage: <node>, /* define for the destination page */
+  fromPage: <node>, /* define for the source page */
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'hero-animation',
+
+    behaviors: [
+      Polymer.NeonSharedElementAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var shared = this.findSharedElements(config);
+      if (!shared) {
+        return;
+      }
+
+      var fromRect = shared.from.getBoundingClientRect();
+      var toRect = shared.to.getBoundingClientRect();
+
+      var deltaLeft = fromRect.left - toRect.left;
+      var deltaTop = fromRect.top - toRect.top;
+      var deltaWidth = fromRect.width / toRect.width;
+      var deltaHeight = fromRect.height / toRect.height;
+
+      this.setPrefixedProperty(shared.to, 'transformOrigin', '0 0');
+      shared.to.style.zIndex = 10000;
+      shared.from.style.visibility = 'hidden';
+
+      this._effect = new KeyframeEffect(shared.to, [
+        {'transform': 'translate(' + deltaLeft + 'px,' + deltaTop + 'px) scale(' + deltaWidth + ',' + deltaHeight + ')'},
+        {'transform': 'none'}
+      ], this.timingFromConfig(config));
+
+      return this._effect;
+    },
+
+    complete: function(config) {
+      var shared = this.findSharedElements(config);
+      if (!shared) {
+        return null;
+      }
+      shared.to.style.zIndex = '';
+      shared.from.style.visibility = '';
+    }
+
+  });
+
+</script>
+<!--
+`<ripple-animation>` scales and transform an element such that it appears to ripple from either
+a shared element, or from a screen position, to full screen.
+
+If using as a shared element animation in `<neon-animated-pages>`, use this animation in an `exit`
+animation in the source page and in an `entry` animation in the destination page. Also, define the
+hero elements in the `sharedElements` property (not a configuration property, see
+`Polymer.NeonSharedElementAnimatableBehavior`).
+
+If using a screen position, define the `gesture` property.
+
+Configuration:
+```
+{
+  name: 'ripple-animation`.
+  id: <shared-element-id>, /* set this or gesture */
+  gesture: {x: <page-x>, y: <page-y>}, /* set this or id */
+  timing: <animation-timing>,
+  toPage: <node>, /* define for the destination page */
+  fromPage: <node>, /* define for the source page */
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'ripple-animation',
+
+    behaviors: [
+      Polymer.NeonSharedElementAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var shared = this.findSharedElements(config);
+      if (!shared) {
+        return null;
+      }
+
+      var translateX, translateY;
+      var toRect = shared.to.getBoundingClientRect();
+      if (config.gesture) {
+        translateX = config.gesture.x - (toRect.left + (toRect.width / 2));
+        translateY = config.gesture.y - (toRect.top + (toRect.height / 2));
+      } else {
+        var fromRect = shared.from.getBoundingClientRect();
+        translateX = (fromRect.left + (fromRect.width / 2)) - (toRect.left + (toRect.width / 2));
+        translateY = (fromRect.top + (fromRect.height / 2)) - (toRect.top + (toRect.height / 2));
+      }
+      var translate = 'translate(' + translateX + 'px,' + translateY + 'px)';
+
+      var size = Math.max(toRect.width + Math.abs(translateX) * 2, toRect.height + Math.abs(translateY) * 2);
+      var diameter = Math.sqrt(2 * size * size);
+      var scaleX = diameter / toRect.width;
+      var scaleY = diameter / toRect.height;
+      var scale = 'scale(' + scaleX + ',' + scaleY + ')';
+
+      this.setPrefixedProperty(shared.to, 'transformOrigin', '50% 50%');
+      shared.to.style.borderRadius = '50%';
+
+      this._effect = new KeyframeEffect(shared.to, [
+        {'transform': translate + ' scale(0)'},
+        {'transform': translate + ' ' + scale}
+      ], this.timingFromConfig(config));
+      return this._effect;
+    },
+
+    complete: function() {
+      if (this.sharedElements) {
+        this.setPrefixedProperty(this.sharedElements.to, 'transformOrigin', '');
+        this.sharedElements.to.style.borderRadius = '';
+      }
+    }
+
+  });
+
+</script>
+<!--
+`<reverse-ripple-animation>` scales and transform an element such that it appears to ripple down from this element, to either
+a shared element, or a screen position.
+
+If using as a shared element animation in `<neon-animated-pages>`, use this animation in an `exit`
+animation in the source page and in an `entry` animation in the destination page. Also, define the
+reverse-ripple elements in the `sharedElements` property (not a configuration property, see
+`Polymer.NeonSharedElementAnimatableBehavior`).
+If using a screen position, define the `gesture` property.
+Configuration:
+```
+{
+  name: 'reverse-ripple-animation`.
+  id: <shared-element-id>, /* set this or gesture */
+  gesture: {x: <page-x>, y: <page-y>}, /* set this or id */
+  timing: <animation-timing>,
+  toPage: <node>, /* define for the destination page */
+  fromPage: <node>, /* define for the source page */
+}
+```
+-->
+
+<script>
+  Polymer({
+    is: 'reverse-ripple-animation',
+
+    behaviors: [
+      Polymer.NeonSharedElementAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var shared = this.findSharedElements(config);
+      if (!shared) {
+        return null;
+      }
+
+      var translateX, translateY;
+      var fromRect = shared.from.getBoundingClientRect();
+      if (config.gesture) {
+        translateX = config.gesture.x - (fromRect.left + (fromRect.width / 2));
+        translateY = config.gesture.y - (fromRect.top + (fromRect.height / 2));
+      } else {
+        var toRect = shared.to.getBoundingClientRect();
+        translateX = (toRect.left + (toRect.width / 2)) - (fromRect.left + (fromRect.width / 2));
+        translateY = (toRect.top + (toRect.height / 2)) - (fromRect.top + (fromRect.height / 2));
+      }
+      var translate = 'translate(' + translateX + 'px,' + translateY + 'px)';
+
+      var size = Math.max(fromRect.width + Math.abs(translateX) * 2, fromRect.height + Math.abs(translateY) * 2);
+      var diameter = Math.sqrt(2 * size * size);
+      var scaleX = diameter / fromRect.width;
+      var scaleY = diameter / fromRect.height;
+      var scale = 'scale(' + scaleX + ',' + scaleY + ')';
+
+      this.setPrefixedProperty(shared.from, 'transformOrigin', '50% 50%');
+      shared.from.style.borderRadius = '50%';
+
+      this._effect = new KeyframeEffect(shared.from, [
+        {'transform': translate + ' ' + scale},
+        {'transform': translate + ' scale(0)'}
+      ], this.timingFromConfig(config));
+      return this._effect;
+    },
+
+    complete: function() {
+      if (this.sharedElements) {
+        this.setPrefixedProperty(this.sharedElements.from, 'transformOrigin', '');
+        this.sharedElements.from.style.borderRadius = '';
+      }
+    }
+  });
+</script>
+<!--
+`<scale-down-animation>` animates the scale transform of an element from 1 to 0. By default it
+scales in both the x and y axes.
+
+Configuration:
+```
+{
+  name: 'scale-down-animation',
+  node: <node>,
+  axis: 'x' | 'y' | '',
+  transformOrigin: <transform-origin>,
+  timing: <animation-timing>
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'scale-down-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+
+      if (config.transformOrigin) {
+        this.setPrefixedProperty(node, 'transformOrigin', config.transformOrigin);
+      }
+
+      var scaleProperty = 'scale(0, 0)';
+      if (config.axis === 'x') {
+        scaleProperty = 'scale(0, 1)';
+      } else if (config.axis === 'y') {
+        scaleProperty = 'scale(1, 0)';
+      }
+
+      this._effect = new KeyframeEffect(node, [
+        {'transform': 'scale(1,1)'},
+        {'transform': scaleProperty}
+      ], this.timingFromConfig(config));
+
+      return this._effect;
+    }
+
+  });
+
+</script>
+<!--
+`<scale-up-animation>` animates the scale transform of an element from 0 to 1. By default it
+scales in both the x and y axes.
+
+Configuration:
+```
+{
+  name: 'scale-up-animation',
+  node: <node>,
+  axis: 'x' | 'y' | '',
+  transformOrigin: <transform-origin>,
+  timing: <animation-timing>
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'scale-up-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+
+      if (config.transformOrigin) {
+        this.setPrefixedProperty(node, 'transformOrigin', config.transformOrigin);
+      }
+
+      var scaleProperty = 'scale(0)';
+      if (config.axis === 'x') {
+        scaleProperty = 'scale(0, 1)';
+      } else if (config.axis === 'y') {
+        scaleProperty = 'scale(1, 0)';
+      }
+
+      this._effect = new KeyframeEffect(node, [
+        {'transform': scaleProperty},
+        {'transform': 'scale(1, 1)'}
+      ], this.timingFromConfig(config));
+
+      return this._effect;
+    }
+
+  });
+
+</script>
+<!--
+`<slide-from-left-animation>` animates the transform of an element from
+`translateX(-100%)` to `none`.
+The `transformOrigin` defaults to `0 50%`.
+
+Configuration:
+```
+{
+  name: 'slide-from-left-animation',
+  node: <node>,
+  transformOrigin: <transform-origin>,
+  timing: <animation-timing>
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'slide-from-left-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+
+      if (config.transformOrigin) {
+        this.setPrefixedProperty(node, 'transformOrigin', config.transformOrigin);
+      } else {
+        this.setPrefixedProperty(node, 'transformOrigin', '0 50%');
+      }
+
+      this._effect = new KeyframeEffect(node, [
+        {'transform': 'translateX(-100%)'},
+        {'transform': 'none'}
+      ], this.timingFromConfig(config));
+
+      return this._effect;
+    }
+
+  });
+
+</script>
+<!--
+`<slide-from-right-animation>` animates the transform of an element from
+`translateX(100%)` to `none`.
+The `transformOrigin` defaults to `0 50%`.
+
+Configuration:
+```
+{
+  name: 'slide-from-right-animation',
+  node: <node>,
+  transformOrigin: <transform-origin>,
+  timing: <animation-timing>
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'slide-from-right-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+
+      if (config.transformOrigin) {
+        this.setPrefixedProperty(node, 'transformOrigin', config.transformOrigin);
+      } else {
+        this.setPrefixedProperty(node, 'transformOrigin', '0 50%');
+      }
+
+      this._effect = new KeyframeEffect(node, [
+        {'transform': 'translateX(100%)'},
+        {'transform': 'none'}
+      ], this.timingFromConfig(config));
+
+      return this._effect;
+    }
+
+  });
+
+</script>
+<!--
+`<slide-left-animation>` animates the transform of an element from `none` to `translateX(-100%)`.
+The `transformOrigin` defaults to `0 50%`.
+
+Configuration:
+```
+{
+  name: 'slide-left-animation',
+  node: <node>,
+  transformOrigin: <transform-origin>,
+  timing: <animation-timing>
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'slide-left-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+
+      if (config.transformOrigin) {
+        this.setPrefixedProperty(node, 'transformOrigin', config.transformOrigin);
+      } else {
+        this.setPrefixedProperty(node, 'transformOrigin', '0 50%');
+      }
+
+      this._effect = new KeyframeEffect(node, [
+        {'transform': 'none'},
+        {'transform': 'translateX(-100%)'}
+      ], this.timingFromConfig(config));
+
+      return this._effect;
+    }
+
+  });
+
+</script>
+<!--
+`<slide-right-animation>` animates the transform of an element from `none` to `translateX(100%)`.
+The `transformOrigin` defaults to `0 50%`.
+
+Configuration:
+```
+{
+  name: 'slide-right-animation',
+  node: <node>,
+  transformOrigin: <transform-origin>,
+  timing: <animation-timing>
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'slide-right-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+
+      if (config.transformOrigin) {
+        this.setPrefixedProperty(node, 'transformOrigin', config.transformOrigin);
+      } else {
+        this.setPrefixedProperty(node, 'transformOrigin', '0 50%');
+      }
+
+      this._effect = new KeyframeEffect(node, [
+        {'transform': 'none'},
+        {'transform': 'translateX(100%)'}
+      ], this.timingFromConfig(config));
+
+      return this._effect;
+    }
+
+  });
+
+</script>
+<!--
+`<slide-up-animation>` animates the transform of an element from `translateY(0)` to
+`translateY(-100%)`. The `transformOrigin` defaults to `50% 0`.
+
+Configuration:
+```
+{
+  name: 'slide-up-animation',
+  node: <node>,
+  transformOrigin: <transform-origin>,
+  timing: <animation-timing>
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'slide-up-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+
+      if (config.transformOrigin) {
+        this.setPrefixedProperty(node, 'transformOrigin', config.transformOrigin);
+      } else {
+        this.setPrefixedProperty(node, 'transformOrigin', '50% 0');
+      }
+
+      this._effect = new KeyframeEffect(node, [
+        {'transform': 'translate(0)'},
+        {'transform': 'translateY(-100%)'}
+      ], this.timingFromConfig(config));
+
+      return this._effect;
+    }
+
+  });
+
+</script>
+<!--
+`<slide-down-animation>` animates the transform of an element from `translateY(-100%)` to `none`.
+The `transformOrigin` defaults to `50% 0`.
+
+Configuration:
+```
+{
+  name: 'slide-down-animation',
+  node: <node>,
+  transformOrigin: <transform-origin>,
+  timing: <animation-timing>
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'slide-down-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+
+      if (config.transformOrigin) {
+        this.setPrefixedProperty(node, 'transformOrigin', config.transformOrigin);
+      } else {
+        this.setPrefixedProperty(node, 'transformOrigin', '50% 0');
+      }
+
+      this._effect = new KeyframeEffect(node, [
+        {'transform': 'translateY(-100%)'},
+        {'transform': 'none'}
+      ], this.timingFromConfig(config));
+
+      return this._effect;
+    }
+
+  });
+
+</script>
+<!--
+`<transform-animation>` animates a custom transform on an element. Use this to animate multiple
+transform properties, or to apply a custom transform value.
+
+Configuration:
+```
+{
+  name: 'transform-animation',
+  node: <node>,
+  transformOrigin: <transform-origin>,
+  transformFrom: <transform-from-string>,
+  transformTo: <transform-to-string>,
+  timing: <animation-timing>
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'transform-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    /**
+     * @param {{
+     *   node: !Element,
+     *   transformOrigin: (string|undefined),
+     *   transformFrom: (string|undefined),
+     *   transformTo: (string|undefined),
+     *   timing: (Object|undefined)
+     * }} config
+     */
+    configure: function(config) {
+      var node = config.node;
+      var transformFrom = config.transformFrom || 'none';
+      var transformTo = config.transformTo || 'none';
+
+      if (config.transformOrigin) {
+        this.setPrefixedProperty(node, 'transformOrigin', config.transformOrigin);
+      }
+
+      this._effect = new KeyframeEffect(node, [
+        {'transform': transformFrom},
+        {'transform': transformTo}
+      ], this.timingFromConfig(config));
+
+      return this._effect;
+    }
+
+  });
+
+</script>
+<!--
+Material design: [Floating Action Button](https://www.google.com/design/spec/components/buttons-floating-action-button.html)
+
+`paper-fab` is a floating action button. It contains an image placed in the center and
+comes in two sizes: regular size and a smaller size by applying the attribute `mini`. When
+the user touches the button, a ripple effect emanates from the center of the button.
+
+You may import `iron-icons` to use with this element, or provide a URL to a custom icon.
+See `iron-iconset` for more information about how to use a custom icon set.
+
+Example:
+
+    <link href="path/to/iron-icons/iron-icons.html" rel="import">
+
+    <paper-fab icon="add"></paper-fab>
+    <paper-fab mini icon="favorite"></paper-fab>
+    <paper-fab src="star.png"></paper-fab>
+
+
+### Styling
+
+The following custom properties and mixins are available for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--paper-fab-background` | The background color of the button | `--accent-color`
+`--paper-fab-keyboard-focus-background` | The background color of the button when focused | `--paper-pink-900`
+`--paper-fab-disabled-background` | The background color of the button when it's disabled | `--paper-grey-300`
+`--paper-fab-disabled-text` | The text color of the button when it's disabled | `--paper-grey-500`
+`--paper-fab` | Mixin applied to the button | `{}`
+`--paper-fab-mini` | Mixin applied to a mini button | `{}`
+`--paper-fab-disabled` | Mixin applied to a disabled button | `{}`
+`--paper-fab-iron-icon` | Mixin applied to the iron-icon within the button | `{}`
+
+@group Paper Elements
+@demo demo/index.html
+
+-->
+
 <style is="custom-style">
       html, body{
         font-family: 'Roboto';
-      }
-      paper-button.blue {
-        color: var(--paper-light-blue-500);
-        --paper-button-flat-focus-color: var(--paper-light-blue-50);
-      }
-      paper-button.blue:hover {
-        background: var(--paper-light-blue-50);
+        overflow: hidden;
+        @apply(--layout-fullbleed);
+        @apply(--layout-vertical);
       }
 
       ul {
@@ -11878,12 +13341,70 @@ information about `paper-radio-button`.
 
       }
 
+      ol > li {
+        display: none;
+        opacity: 0;
+        transition: all 2s linear;
+      }
+
+      ol > li.visible{
+        opacity: 1;
+        display: block;
+      }
+
       paper-material{
         padding:2%;
       }
+
+      paper-fab.gray {
+  			--paper-fab-background: var(--paper-grey-500);
+  			--paper-fab-keyboard-focus-background: var(--paper-grey-500);
+  		}
+
+      paper-fab.blue {
+  			--paper-fab-background: var(--paper-light-blue-500);
+  			--paper-fab-keyboard-focus-background: var(--paper-light-blue-500);
+  		}
+
+  		paper-toolbar {
+  			--paper-toolbar-background: var(--paper-light-blue-500);
+  		}
+
+      .bayerLogo{
+        position: absolute;
+        right:2%;
+        top:30%;
+        width:90px;
+        height:90px;
+        background-color: #fff;
+        border-radius: 50%;
+        box-shadow: 2px 2px 5px #333;
+      }
+
+      neon-animated-pages {
+        @apply(--layout-flex);
+        @apply(--layout-vertical);
+      }
+
+      neon-animatable label{
+        display: block;
+        text-align: center;
+      }
+
+      .container {
+        @apply(--layout-flex);
+        padding:2%;
+      }
+
+      .horizontal {
+        @apply(--layout-horizontal);
+      }
+      .flexchild {
+        @apply(--layout-flex);
+      }
     </style>
   </head>
-  <body class="fullbleed vertical layout"><div hidden="" by-vulcanize=""><dom-module id="paper-header-panel" assetpath="../bower_components/paper-header-panel/">
+  <body><div hidden="" by-vulcanize=""><dom-module id="paper-header-panel" assetpath="../bower_components/paper-header-panel/">
   <template>
     <style>
       :host {
@@ -15035,42 +16556,431 @@ information about `paper-radio-button`.
     },
   });
 </script>
-</div>
-    <!-- paper-header-panel must have an explicit height -->
-    <paper-header-panel class="flex">
-      <paper-toolbar>
-        <div>Questionario con risposte</div>
-      </paper-toolbar>
-    </paper-header-panel>
-    <div>
-      <form is="iron-form" id="form" method="post" action="/form/handler">
-        <paper-material>
-          <ol>
-            <li>
-              <label>La domanda da fare come risposte multiple?</label>
-              <ul>
-                <li><paper-checkbox>Risposta 1</paper-checkbox></li>
-                <li><paper-checkbox>Risposta 2</paper-checkbox></li>
-                <li><paper-checkbox>Risposta 3</paper-checkbox></li>
-              </ul>
-            </li>
-            <li>
-              <label>La domanda da fare come risposte singole?</label><br>
-              <paper-radio-group>
-                <paper-radio-button name="first">First</paper-radio-button><br>
-                <paper-radio-button name="second">Second</paper-radio-button><br>
-                <paper-radio-button name="third">Third</paper-radio-button>
-              </paper-radio-group>
-            </li>
-          </ol>
-          <paper-button class="blue ripple">
-            <iron-icon icon="check"></iron-icon>
-            Conferma
-          </paper-button>
-        </paper-material>
-      </form>
+<dom-module id="neon-animated-pages" assetpath="../bower_components/neon-animation/">
 
-    </div>
+  <style>
+
+    :host {
+      display: block;
+      position: relative;
+    }
+
+    :host > ::content > * {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      height: 100%;
+    }
+
+    :host > ::content > :not(.iron-selected):not(.neon-animating) {
+      display: none !important;
+    }
+
+    :host > ::content > .neon-animating {
+      pointer-events: none;
+    }
+
+  </style>
+
+  <template>
+    <content id="content"></content>
+  </template>
+
+</dom-module>
+
+<script>
+(function() {
+
+  Polymer({
+
+    is: 'neon-animated-pages',
+
+    behaviors: [
+      Polymer.IronResizableBehavior,
+      Polymer.IronSelectableBehavior,
+      Polymer.NeonAnimationRunnerBehavior
+    ],
+
+    properties: {
+
+      activateEvent: {
+        type: String,
+        value: ''
+      },
+
+      // if true, the initial page selection will also be animated according to its animation config.
+      animateInitialSelection: {
+        type: Boolean,
+        value: false
+      }
+
+    },
+
+    observers: [
+      '_selectedChanged(selected)'
+    ],
+
+    listeners: {
+      'neon-animation-finish': '_onNeonAnimationFinish'
+    },
+
+    _selectedChanged: function(selected) {
+
+      var selectedPage = this.selectedItem;
+      var oldPage = this._valueToItem(this._prevSelected) || false;
+      this._prevSelected = selected;
+
+      // on initial load and if animateInitialSelection is negated, simply display selectedPage.
+      if (!oldPage && !this.animateInitialSelection) {
+        this._completeSelectedChanged();
+        return;
+      }
+
+      // insert safari fix.
+      this.animationConfig = [{
+        name: 'opaque-animation',
+        node: selectedPage
+      }];
+
+      // configure selectedPage animations.
+      if (this.entryAnimation) {
+        this.animationConfig.push({
+          name: this.entryAnimation,
+          node: selectedPage
+        });
+      } else {
+        if (selectedPage.getAnimationConfig) {
+          this.animationConfig.push({
+            animatable: selectedPage,
+            type: 'entry'
+          });
+        }
+      }
+
+      // configure oldPage animations iff exists.
+      if (oldPage) {
+
+        // cancel the currently running animation if one is ongoing.
+        if (oldPage.classList.contains('neon-animating')) {
+          this._squelchNextFinishEvent = true;
+          this.cancelAnimation();
+          this._completeSelectedChanged();
+          this._squelchNextFinishEvent = false;
+        }
+
+        // configure the animation.
+        if (this.exitAnimation) {
+          this.animationConfig.push({
+            name: this.exitAnimation,
+            node: oldPage
+          });
+        } else {
+          if (oldPage.getAnimationConfig) {
+            this.animationConfig.push({
+              animatable: oldPage,
+              type: 'exit'
+            });
+          }
+        }
+
+        // display the oldPage during the transition.
+        oldPage.classList.add('neon-animating');
+      }
+
+      // display the selectedPage during the transition.
+      selectedPage.classList.add('neon-animating');
+
+      // actually run the animations.
+      if (this.animationConfig.length > 1) {
+
+        // on first load, ensure we run animations only after element is attached.
+        if (!this.isAttached) {
+          this.async(function () {
+            this.playAnimation(undefined, {
+              fromPage: null,
+              toPage: selectedPage
+            });
+          });
+
+        } else {
+          this.playAnimation(undefined, {
+            fromPage: oldPage,
+            toPage: selectedPage
+          });
+        }
+
+      } else {
+        this._completeSelectedChanged(oldPage, selectedPage);
+      }
+    },
+
+    /**
+     * @param {Object=} oldPage
+     * @param {Object=} selectedPage
+     */
+    _completeSelectedChanged: function(oldPage, selectedPage) {
+      if (selectedPage) {
+        selectedPage.classList.remove('neon-animating');
+      }
+      if (oldPage) {
+        oldPage.classList.remove('neon-animating');
+      }
+      if (!selectedPage || !oldPage) {
+        var nodes = Polymer.dom(this.$.content).getDistributedNodes();
+        for (var node, index = 0; node = nodes[index]; index++) {
+          node.classList && node.classList.remove('neon-animating');
+        }
+      }
+      this.async(this._notifyPageResize);
+    },
+
+    _onNeonAnimationFinish: function(event) {
+      if (this._squelchNextFinishEvent) {
+        this._squelchNextFinishEvent = false;
+        return;
+      }
+      this._completeSelectedChanged(event.detail.fromPage, event.detail.toPage);
+    },
+
+    _notifyPageResize: function() {
+      var selectedPage = this.selectedItem;
+      this.resizerShouldNotify = function(element) {
+        return element == selectedPage;
+      }
+      this.notifyResize();
+    }
+
+  })
+
+})();
+</script>
+<dom-module id="neon-animatable" assetpath="../bower_components/neon-animation/">
+
+  <style>
+
+    :host {
+      display: block;
+    }
+
+  </style>
+
+  <template>
+    <content></content>
+  </template>
+
+</dom-module>
+
+<script>
+
+  Polymer({
+
+    is: 'neon-animatable',
+
+    behaviors: [
+      Polymer.NeonAnimatableBehavior,
+      Polymer.IronResizableBehavior
+    ]
+
+  });
+
+</script>
+<dom-module id="paper-fab" assetpath="../bower_components/paper-fab/">
+  <template strip-whitespace="">
+    <style include="paper-material">
+      :host {
+        display: inline-block;
+        position: relative;
+        outline: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: rgba(0,0,0,0);
+        user-select: none;
+        cursor: pointer;
+
+        box-sizing: border-box;
+        min-width: 0;
+        width: 56px;
+        height: 56px;
+        background: var(--paper-fab-background, --accent-color);
+        color: var(--text-primary-color);
+        border-radius: 50%;
+        padding: 16px;
+
+        z-index: 0;
+
+        @apply(--layout-vertical);
+        @apply(--layout-center-center);
+        @apply(--paper-fab);
+      }
+
+      :host([mini]) {
+        width: 40px;
+        height: 40px;
+        padding: 8px;
+
+        @apply(--paper-fab-mini);
+      }
+
+      :host([disabled]) {
+        color: var(--paper-fab-disabled-text, --paper-grey-500);
+        background: var(--paper-fab-disabled-background, --paper-grey-300);
+        @apply(--paper-fab-disabled);
+      }
+
+      iron-icon {
+        @apply(--paper-fab-iron-icon);
+      }
+
+      :host(.keyboard-focus) {
+        background: var(--paper-fab-keyboard-focus-background, --paper-pink-900);
+      }
+    </style>
+
+    <iron-icon id="icon" src="[[src]]" icon="[[icon]]"></iron-icon>
+  </template>
+</dom-module>
+
+<script>
+  Polymer({
+    is: 'paper-fab',
+
+    behaviors: [
+      Polymer.PaperButtonBehavior
+    ],
+
+    properties: {
+      /**
+       * The URL of an image for the icon. If the src property is specified,
+       * the icon property should not be.
+       *
+       * @attribute src
+       * @type string
+       * @default ''
+       */
+      src: {
+        type: String,
+        value: ''
+      },
+
+      /**
+       * Specifies the icon name or index in the set of icons available in
+       * the icon's icon set. If the icon property is specified,
+       * the src property should not be.
+       *
+       * @attribute icon
+       * @type string
+       * @default ''
+       */
+      icon: {
+        type: String,
+        value: ''
+      },
+
+      /**
+       * Set this to true to style this is a "mini" FAB.
+       *
+       * @attribute mini
+       * @type boolean
+       * @default false
+       */
+      mini: {
+        type: Boolean,
+        value: false,
+        reflectToAttribute: true
+      }
+    }
+  });
+</script>
+</div>
+    <template is="dom-bind">
+        <!-- paper-header-panel must have an explicit height -->
+        <div>
+        <!--<paper-header-panel class="flex">-->
+          <paper-toolbar class="medium-tall">
+            <div class="bottom">
+              <span class="middle title">Bayer: Science For A Better Life</span>
+            </div>
+            <img class="bayerLogo" src="Bayer-Logo.svg">
+          </paper-toolbar>
+        <!--</paper-header-panel>-->
+        </div>
+        <div class="container">
+          <form is="iron-form" id="form" class="flex" method="post" action="/form/handler">
+            <input type="hidden" name="curdom" id="curdom" value="">
+              <neon-animated-pages id="pages" selected="[[selected]]" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
+                <neon-animatable>
+                  <label>Caro Vet, stiamo conducendo un’indagine su come il Vet valuta i prodotti antiparassitari esterni in vista di strategie (di comunicazione?) future. Ti va di partecipare ad un breve questionario? (Anonimo, riservato …)</label>
+                </neon-animatable>
+                <neon-animatable>
+                  <label>Spot on, Collari e Compresse: quali formulazioni preferisci in ordine di preferenza per la protezione del cane dai parassiti esterni?</label>
+                  <ul>
+                    <li><paper-input class="short" label="Spot on" type="number" id="ris_11"></paper-input></li>
+                    <li><paper-input class="short" label="Collari" type="number" id="ris_11"></paper-input></li>
+                    <li><paper-input class="short" label="Compresse" type="number" id=""></paper-input></li>
+                  </ul>
+                </neon-animatable>
+                <neon-animatable>
+                  <label>La domanda da fare come risposte multiple?</label>
+                  <ul>
+                    <li><paper-checkbox>Risposta 1</paper-checkbox></li>
+                    <li><paper-checkbox>Risposta 2</paper-checkbox></li>
+                    <li><paper-checkbox>Risposta 3</paper-checkbox></li>
+                  </ul>
+                </neon-animatable>
+                <neon-animatable>
+                  <label>La domanda da fare come risposte singole?</label><br>
+                  <paper-radio-group>
+                    <paper-radio-button name="first">First</paper-radio-button><br>
+                    <paper-radio-button name="second">Second</paper-radio-button><br>
+                    <paper-radio-button name="third">Third</paper-radio-button>
+                  </paper-radio-group>
+                </neon-animatable>
+                <neon-animatable>
+                  <label>FINE<br>Fai il submit!</label>
+
+                </neon-animatable>
+              </neon-animated-pages>
+          </form>
+        </div>
+        <div>
+          <div class="horizontal" style="padding:2%;">
+            <div><paper-fab disabled="[[_isPrevDisabled]]" icon="arrow-back" title="Prev" class="gray" on-tap="_onPrevTap"></paper-fab></div>
+            <div class="flexchild"></div>
+            <div><paper-fab disabled="[[_isNextDisabled]]" icon="arrow-forward" title="Next" class="blue" on-tap="_onNextTap"></paper-fab></div>
+          </div>
+        </div>
+      
+    </template>
+
+    <script>
+      var scope = document.querySelector('template[is="dom-bind"]');
+
+      scope.totalQuestions = 4;
+      scope.selected = 0;
+      scope._isPrevDisabled = true;
+      scope._isNextDisabled = false;
+      scope._onPrevTap = function() {
+        this.entryAnimation = 'slide-from-left-animation';
+        this.exitAnimation = 'slide-right-animation';
+        if (this.selected !== 0){
+          this.selected = this.selected - 1;
+        }
+        this._isPrevDisabled = (this.selected === 0);
+        this._isNextDisabled = false;
+      };
+      scope._onNextTap = function() {
+        this.entryAnimation = 'slide-from-right-animation';
+        this.exitAnimation = 'slide-left-animation';
+        if (this.selected !== this.totalQuestions){
+          this.selected = this.selected + 1;
+        }
+        this._isPrevDisabled = false;
+        this._isNextDisabled = (this.selected == this.totalQuestions);
+      };
+    </script>
   
 
 </body></html>
