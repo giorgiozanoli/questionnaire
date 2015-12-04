@@ -33,10 +33,9 @@
         padding:1.5% 12px;
       }
 
-      ul li{
+      li{
         list-style-type: none;
         margin-bottom: 3%;
-
       }
 
       paper-fab.gray {
@@ -53,7 +52,7 @@
   			--paper-toolbar-background: var(--paper-light-blue-500);
   		}
 
-      .bayerLogo{
+      .customLogo{
         position: absolute;
         right:2%;
         top:30%;
@@ -94,44 +93,47 @@
           <div class="bottom">
             <span class="middle title">Bayer: Science For A Better Life</span>
           </div>
-          <img class="bayerLogo" src="../../Bayer-Logo.svg" />
+          <img class="customLogo" src="[[logoSrc]]" />
         </paper-toolbar>
       </div>
       <div class="container">
         <form is="iron-form" id="form" class="flex" method="post" action="/form/handler">
           <input type="hidden" name="curdom" id="curdom" value="">
-            <neon-animated-pages id="pages" selected="[[selected]]" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
+          <neon-animated-pages id="pages" selected="[[selected]]" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
+            <neon-animatable>
+              <label>[[introTxt]]</label>
+            </neon-animatable>
+            <template is="dom-repeat" items="[[questions]]" as="question">
               <neon-animatable>
-                <label>Caro Vet, stiamo conducendo un’indagine su come il Vet valuta i prodotti antiparassitari esterni in vista di strategie (di comunicazione?) future. Ti va di partecipare ad un breve questionario? (Anonimo, riservato …)</label>
+                <label>[[question.label]]</label>
+                <template is="dom-if" if="{{isEquals(question.answers[0].type, 'radio')}}">
+                  <paper-radio-group>
+                    <template is="dom-repeat" items="{{question.answers}}" as="answer">
+                      <paper-radio-button name="{{answer.id}}" value="{{answer.value}}">{{answer.text}}</paper-radio-button><br />
+                    </template>
+                  </paper-radio-group>
+                </template>
+
+                <template is="dom-if" if="{{!isEquals(question.answers[0].type, 'radio')}}">
+                  <ul>
+                    <template is="dom-if" if="{{!isEquals(answer.type, 'radio')}}">
+                      <li>
+                        <template is="dom-if" if="{{isEquals(answer.type, 'check')}}">
+                          <paper-checkbox name="[[answer.id]]" value="[[answer.value]]">[[answer.text]]</paper-checkbox>
+                        </template>
+                        <template is="dom-if" if="{{!isEquals(answer.type, 'check')}}">
+                          <paper-input class="short" name="[[answer.id]]" label="[[answer.text]]" value="[[answer.value]]" type="[[answer.type]]" id="[[answer.id]]"></paper-input>
+                        </template>
+                      </li>
+                    </template>
+                  </ul>
+                </template>
               </neon-animatable>
-              <neon-animatable>
-                <label>Spot on, Collari e Compresse: quali formulazioni preferisci in ordine di preferenza per la protezione del cane dai parassiti esterni?</label>
-                <ul>
-                  <li><paper-input class="short" label="Spot on" 		type="number" id="ris_11"></paper-input></li>
-                  <li><paper-input class="short" label="Collari" 		type="number"id="ris_11"></paper-input></li>
-                  <li><paper-input class="short" label="Compresse" 	type="number"id=""></paper-input></li>
-                </ul>
-              </neon-animatable>
-              <neon-animatable>
-                <label>La domanda da fare come risposte multiple?</label>
-                <ul>
-                  <li><paper-checkbox>Risposta 1</paper-checkbox></li>
-                  <li><paper-checkbox>Risposta 2</paper-checkbox></li>
-                  <li><paper-checkbox>Risposta 3</paper-checkbox></li>
-                </ul>
-              </neon-animatable>
-              <neon-animatable>
-                <label>La domanda da fare come risposte singole?</label><br />
-                <paper-radio-group>
-                  <paper-radio-button name="first">First</paper-radio-button><br />
-                  <paper-radio-button name="second">Second</paper-radio-button><br />
-                  <paper-radio-button name="third">Third</paper-radio-button>
-                </paper-radio-group>
-              </neon-animatable>
-              <neon-animatable>
-                <label>FINE<br />Fai il submit!</label>
-              </neon-animatable>
-            </neon-animated-pages>
+            </template>
+            <neon-animatable>
+              <label>FINE<br />Fai il submit!</label>
+            </neon-animatable>
+          </neon-animated-pages>
         </form>
       </div>
       <div>
@@ -142,7 +144,7 @@
         </div>
       </div>
     </div>
-
+    [[questions.length]]
   </template>
 </dom-module>
 
@@ -150,12 +152,17 @@
   Polymer({
     is: 'question-list',
     properties: {
-      selected : {
-        type : Number,
+      logoSrc : {
+        type : String,
         notify : true,
-        value : 0
+        value : ""
       },
-      totalQuestions : {
+      introTxt : {
+        type : String,
+        notify : true,
+        value : ""
+      },
+      selected : {
         type : Number,
         notify : true,
         value : 0
@@ -166,7 +173,7 @@
       },
       isNextDisabled : {
         type : Boolean,
-        computed : 'isEquals(selected, totalQuestions)'
+        computed : 'isGreaterThan(questions.length, selected)'
       },
       entryAnimation : {
         type : String,
@@ -175,7 +182,12 @@
       exitAnimation : {
         type : String,
         notify : true
-      }
+      },
+      questions : {
+        type : Array,
+        notify : true,
+        value : []
+      },
     },
 
     ready: function() {
@@ -183,7 +195,12 @@
     },
 
     isEquals : function(value, valueToEqual){
+      console.log(value, valueToEqual, value === valueToEqual);
       return value === valueToEqual;
+    },
+
+    isGreaterThan : function(value, valueToEqual){
+      return value < valueToEqual;
     },
 
     onPrevTap : function() {
@@ -197,7 +214,7 @@
     onNextTap : function() {
       this.entryAnimation = 'slide-from-right-animation';
       this.exitAnimation = 'slide-left-animation';
-      if (this.selected !== this.totalQuestions){
+      if (this.selected !== (this.questions.length + 1)){
         this.selected = this.selected + 1;
       }
     }

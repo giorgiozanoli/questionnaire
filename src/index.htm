@@ -12,13 +12,53 @@
     <style is="custom-style">
       html, body{
         font-family: 'Roboto';
-        overflow: hidden;
+        overflow-x: hidden;
         @apply(--layout-fullbleed);
         @apply(--layout-vertical);
       }
     </style>
+    <script>
+      var questionList = [
+        {
+          id : '1',
+          label : 'Domanda numero 1',
+          answers : [
+            { id : 100, text : 'Risposta A', value: 'a', type : 'radio'},
+            { id : 100, text : 'Risposta B', value: 'b', type : 'radio'},
+            { id : 100, text : 'Risposta C', value: 'c', type : 'radio'},
+            { id : 100, text : 'Risposta D', value: 'd', type : 'radio'}
+          ]
+        },
+        {
+          id : '2',
+          label : 'Domanda numero 2',
+          answers : [
+            { id : 100, text : 'Risposta E', value: 'e', type : 'checkbox'},
+            { id : 100, text : 'Risposta F', value: 'f', type : 'checkbox'},
+            { id : 100, text : 'Risposta G', value: 'g', type : 'checkbox'},
+            { id : 100, text : 'Risposta H', value: 'h', type : 'checkbox'}
+          ]
+        },
+        {
+          id : '3',
+          label : 'Domanda numero 3',
+          answers : [
+            { id : 100, text : 'Risposta I', value: '', type : 'number'},
+            { id : 100, text : 'Risposta L', value: '', type : 'number'},
+            { id : 100, text : 'Risposta M', value: '', type : 'number'},
+            { id : 100, text : 'Risposta N', value: '', type : 'number'}
+          ]
+        }
+      ];
+    </script>
   </head>
   <body>
-    <question-list></question-list>
+    <question-list
+      logo-src="Bayer-Logo.svg"
+      intro-txt="Caro Vet, stiamo conducendo un’indagine su come il Vet valuta i prodotti antiparassitari esterni in vista di strategie (di comunicazione?) future. Ti va di partecipare ad un breve questionario? (Anonimo, riservato …)"
+      ></question-list>
+    <script>
+      document.querySelector('question-list').questions = questionList;
+    </script>
   </body>
 </html>
