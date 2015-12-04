@@ -5,8 +5,9 @@
     <title>Questionnaire</title>
 
     <script src="../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
-
-    <script>(function () {
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,300,300italic,400italic,500,500italic,700,700italic">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700">
+<script>(function () {
 function resolve() {
 document.body.removeAttribute('unresolved');
 }
@@ -7723,8 +7724,6 @@ To change the panel container in different modes:
   }
 
 </style>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,300,300italic,400italic,500,500italic,700,700italic">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700">
 <style is="custom-style">
 
   :root {
@@ -8026,8 +8025,7 @@ be used as the label of the toolbar via `aria-labelledby`.
 @demo demo/index.html
 -->
 
-<link rel="stylesheet" href="../bower_components/paper-styles/color.html">
-    <!--
+<!--
 `iron-meta` is a generic element you can use for sharing information across the DOM tree.
 It uses [monostate pattern](http://c2.com/cgi/wiki?MonostatePattern) such that any
 instance of iron-meta has access to the shared
@@ -13323,84 +13321,14 @@ Custom property | Description | Default
 
 -->
 
+<link rel="stylesheet" href="../bower_components/paper-styles/color.html">
+
 <style is="custom-style">
       html, body{
         font-family: 'Roboto';
         overflow: hidden;
         @apply(--layout-fullbleed);
         @apply(--layout-vertical);
-      }
-
-      ul {
-        padding:1.5% 12px;
-      }
-
-      ul li{
-        list-style-type: none;
-        margin-bottom: 3%;
-
-      }
-
-      ol > li {
-        display: none;
-        opacity: 0;
-        transition: all 2s linear;
-      }
-
-      ol > li.visible{
-        opacity: 1;
-        display: block;
-      }
-
-      paper-material{
-        padding:2%;
-      }
-
-      paper-fab.gray {
-  			--paper-fab-background: var(--paper-grey-500);
-  			--paper-fab-keyboard-focus-background: var(--paper-grey-500);
-  		}
-
-      paper-fab.blue {
-  			--paper-fab-background: var(--paper-light-blue-500);
-  			--paper-fab-keyboard-focus-background: var(--paper-light-blue-500);
-  		}
-
-  		paper-toolbar {
-  			--paper-toolbar-background: var(--paper-light-blue-500);
-  		}
-
-      .bayerLogo{
-        position: absolute;
-        right:2%;
-        top:30%;
-        width:90px;
-        height:90px;
-        background-color: #fff;
-        border-radius: 50%;
-        box-shadow: 2px 2px 5px #333;
-      }
-
-      neon-animated-pages {
-        @apply(--layout-flex);
-        @apply(--layout-vertical);
-      }
-
-      neon-animatable label{
-        display: block;
-        text-align: center;
-      }
-
-      .container {
-        @apply(--layout-flex);
-        padding:2%;
-      }
-
-      .horizontal {
-        @apply(--layout-horizontal);
-      }
-      .flexchild {
-        @apply(--layout-flex);
       }
     </style>
   </head>
@@ -16894,93 +16822,195 @@ Custom property | Description | Default
     }
   });
 </script>
-</div>
-    <template is="dom-bind">
-        <!-- paper-header-panel must have an explicit height -->
-        <div>
-        <!--<paper-header-panel class="flex">-->
-          <paper-toolbar class="medium-tall">
-            <div class="bottom">
-              <span class="middle title">Bayer: Science For A Better Life</span>
-            </div>
-            <img class="bayerLogo" src="Bayer-Logo.svg">
-          </paper-toolbar>
-        <!--</paper-header-panel>-->
-        </div>
-        <div class="container">
-          <form is="iron-form" id="form" class="flex" method="post" action="/form/handler">
-            <input type="hidden" name="curdom" id="curdom" value="">
-              <neon-animated-pages id="pages" selected="[[selected]]" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
-                <neon-animatable>
-                  <label>Caro Vet, stiamo conducendo un’indagine su come il Vet valuta i prodotti antiparassitari esterni in vista di strategie (di comunicazione?) future. Ti va di partecipare ad un breve questionario? (Anonimo, riservato …)</label>
-                </neon-animatable>
-                <neon-animatable>
-                  <label>Spot on, Collari e Compresse: quali formulazioni preferisci in ordine di preferenza per la protezione del cane dai parassiti esterni?</label>
-                  <ul>
-                    <li><paper-input class="short" label="Spot on" type="number" id="ris_11"></paper-input></li>
-                    <li><paper-input class="short" label="Collari" type="number" id="ris_11"></paper-input></li>
-                    <li><paper-input class="short" label="Compresse" type="number" id=""></paper-input></li>
-                  </ul>
-                </neon-animatable>
-                <neon-animatable>
-                  <label>La domanda da fare come risposte multiple?</label>
-                  <ul>
-                    <li><paper-checkbox>Risposta 1</paper-checkbox></li>
-                    <li><paper-checkbox>Risposta 2</paper-checkbox></li>
-                    <li><paper-checkbox>Risposta 3</paper-checkbox></li>
-                  </ul>
-                </neon-animatable>
-                <neon-animatable>
-                  <label>La domanda da fare come risposte singole?</label><br>
-                  <paper-radio-group>
-                    <paper-radio-button name="first">First</paper-radio-button><br>
-                    <paper-radio-button name="second">Second</paper-radio-button><br>
-                    <paper-radio-button name="third">Third</paper-radio-button>
-                  </paper-radio-group>
-                </neon-animatable>
-                <neon-animatable>
-                  <label>FINE<br>Fai il submit!</label>
+<dom-module id="question-list" assetpath="elements/question-list/">
+  <template>
 
-                </neon-animatable>
-              </neon-animated-pages>
-          </form>
-        </div>
-        <div>
-          <div class="horizontal" style="padding:2%;">
-            <div><paper-fab disabled="[[_isPrevDisabled]]" icon="arrow-back" title="Prev" class="gray" on-tap="_onPrevTap"></paper-fab></div>
-            <div class="flexchild"></div>
-            <div><paper-fab disabled="[[_isNextDisabled]]" icon="arrow-forward" title="Next" class="blue" on-tap="_onNextTap"></paper-fab></div>
+    <style>
+      :host {
+        display: block;
+      }
+
+      .main-container{
+        @apply(--layout-fullbleed);
+        @apply(--layout-vertical);
+      }
+
+      ul {
+        padding:1.5% 12px;
+      }
+
+      ul li{
+        list-style-type: none;
+        margin-bottom: 3%;
+
+      }
+
+      paper-fab.gray {
+  			--paper-fab-background: var(--paper-grey-500);
+  			--paper-fab-keyboard-focus-background: var(--paper-grey-500);
+  		}
+
+      paper-fab.blue {
+  			--paper-fab-background: var(--paper-light-blue-500);
+  			--paper-fab-keyboard-focus-background: var(--paper-light-blue-500);
+  		}
+
+  		paper-toolbar {
+  			--paper-toolbar-background: var(--paper-light-blue-500);
+  		}
+
+      .bayerLogo{
+        position: absolute;
+        right:2%;
+        top:30%;
+        width:90px;
+        height:90px;
+        background-color: #fff;
+        border-radius: 50%;
+        box-shadow: 2px 2px 5px #333;
+      }
+
+      neon-animated-pages {
+        @apply(--layout-flex);
+        @apply(--layout-vertical);
+      }
+
+      neon-animatable label{
+        display: block;
+        text-align: center;
+      }
+
+      .container {
+        @apply(--layout-flex);
+        padding:2%;
+      }
+
+      .horizontal {
+        @apply(--layout-horizontal);
+      }
+      .flexchild {
+        @apply(--layout-flex);
+      }
+    </style>
+
+    <!-- paper-header-panel must have an explicit height -->
+    <div class="main-container">
+      <div>
+        <paper-toolbar class="medium-tall">
+          <div class="bottom">
+            <span class="middle title">Bayer: Science For A Better Life</span>
           </div>
+          <img class="bayerLogo" src="Bayer-Logo.svg">
+        </paper-toolbar>
+      </div>
+      <div class="container">
+        <form is="iron-form" id="form" class="flex" method="post" action="/form/handler">
+          <input type="hidden" name="curdom" id="curdom" value="">
+            <neon-animated-pages id="pages" selected="[[selected]]" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
+              <neon-animatable>
+                <label>Caro Vet, stiamo conducendo un’indagine su come il Vet valuta i prodotti antiparassitari esterni in vista di strategie (di comunicazione?) future. Ti va di partecipare ad un breve questionario? (Anonimo, riservato …)</label>
+              </neon-animatable>
+              <neon-animatable>
+                <label>Spot on, Collari e Compresse: quali formulazioni preferisci in ordine di preferenza per la protezione del cane dai parassiti esterni?</label>
+                <ul>
+                  <li><paper-input class="short" label="Spot on" type="number" id="ris_11"></paper-input></li>
+                  <li><paper-input class="short" label="Collari" type="number" id="ris_11"></paper-input></li>
+                  <li><paper-input class="short" label="Compresse" type="number" id=""></paper-input></li>
+                </ul>
+              </neon-animatable>
+              <neon-animatable>
+                <label>La domanda da fare come risposte multiple?</label>
+                <ul>
+                  <li><paper-checkbox>Risposta 1</paper-checkbox></li>
+                  <li><paper-checkbox>Risposta 2</paper-checkbox></li>
+                  <li><paper-checkbox>Risposta 3</paper-checkbox></li>
+                </ul>
+              </neon-animatable>
+              <neon-animatable>
+                <label>La domanda da fare come risposte singole?</label><br>
+                <paper-radio-group>
+                  <paper-radio-button name="first">First</paper-radio-button><br>
+                  <paper-radio-button name="second">Second</paper-radio-button><br>
+                  <paper-radio-button name="third">Third</paper-radio-button>
+                </paper-radio-group>
+              </neon-animatable>
+              <neon-animatable>
+                <label>FINE<br>Fai il submit!</label>
+              </neon-animatable>
+            </neon-animated-pages>
+        </form>
+      </div>
+      <div>
+        <div class="horizontal" style="padding:2%;">
+          <div><paper-fab disabled="[[isPrevDisabled]]" icon="arrow-back" title="Prev" class="gray" on-tap="onPrevTap"></paper-fab></div>
+          <div class="flexchild"></div>
+          <div><paper-fab disabled="[[isNextDisabled]]" icon="arrow-forward" title="Next" class="blue" on-tap="onNextTap"></paper-fab></div>
         </div>
-      
-    </template>
+      </div>
+    </div>
 
-    <script>
-      var scope = document.querySelector('template[is="dom-bind"]');
+  </template>
+</dom-module>
 
-      scope.totalQuestions = 4;
-      scope.selected = 0;
-      scope._isPrevDisabled = true;
-      scope._isNextDisabled = false;
-      scope._onPrevTap = function() {
-        this.entryAnimation = 'slide-from-left-animation';
-        this.exitAnimation = 'slide-right-animation';
-        if (this.selected !== 0){
-          this.selected = this.selected - 1;
-        }
-        this._isPrevDisabled = (this.selected === 0);
-        this._isNextDisabled = false;
-      };
-      scope._onNextTap = function() {
-        this.entryAnimation = 'slide-from-right-animation';
-        this.exitAnimation = 'slide-left-animation';
-        if (this.selected !== this.totalQuestions){
-          this.selected = this.selected + 1;
-        }
-        this._isPrevDisabled = false;
-        this._isNextDisabled = (this.selected == this.totalQuestions);
-      };
-    </script>
+<script>
+  Polymer({
+    is: 'question-list',
+    properties: {
+      selected : {
+        type : Number,
+        notify : true,
+        value : 0
+      },
+      totalQuestions : {
+        type : Number,
+        notify : true,
+        value : 0
+      },
+      isPrevDisabled : {
+        type : Boolean,
+        computed : 'isEquals(selected, 0)'
+      },
+      isNextDisabled : {
+        type : Boolean,
+        computed : 'isEquals(selected, totalQuestions)'
+      },
+      entryAnimation : {
+        type : String,
+        notify : true
+      },
+      exitAnimation : {
+        type : String,
+        notify : true
+      }
+    },
+
+    ready: function() {
+      this.totalQuestions = this.querySelectorAll('neon-animatable').length - 1;
+    },
+
+    isEquals : function(value, valueToEqual){
+      return value === valueToEqual;
+    },
+
+    onPrevTap : function() {
+      this.entryAnimation = 'slide-from-left-animation';
+      this.exitAnimation = 'slide-right-animation';
+      if (this.selected !== 0){
+        this.selected = this.selected - 1;
+      }
+    },
+
+    onNextTap : function() {
+      this.entryAnimation = 'slide-from-right-animation';
+      this.exitAnimation = 'slide-left-animation';
+      if (this.selected !== this.totalQuestions){
+        this.selected = this.selected + 1;
+      }
+    }
+  });
+</script>
+</div>
+    <question-list></question-list>
   
 
 </body></html>
