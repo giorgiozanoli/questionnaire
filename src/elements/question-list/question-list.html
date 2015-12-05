@@ -2,6 +2,7 @@
 <link rel="import" href="../../../bower_components/paper-toolbar/paper-toolbar.html">
 <link rel="import" href="../../../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../../bower_components/iron-form/iron-form.html">
 <link rel="import" href="../../../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../../bower_components/paper-material/paper-material.html">
@@ -9,6 +10,7 @@
 <link rel="import" href="../../../bower_components/paper-checkbox/paper-checkbox.html">
 <link rel="import" href="../../../bower_components/paper-radio-button/paper-radio-button.html">
 <link rel="import" href="../../../bower_components/paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../../bower_components/neon-animation/neon-animated-pages.html">
 <link rel="import" href="../../../bower_components/neon-animation/neon-animatable.html">
 <link rel="import" href="../../../bower_components/neon-animation/neon-animations.html">
@@ -22,6 +24,8 @@
     <style>
       :host {
         display: block;
+        --default-primary-color: var(--paper-light-blue-500);
+        --accent-color: var(--paper-light-blue-500);
       }
 
       .main-container{
@@ -84,6 +88,11 @@
       .flexchild {
         @apply(--layout-flex);
       }
+
+      paper-button.submit-btn {
+        background: var(--paper-light-blue-500);
+        color:#fff;
+      }
     </style>
 
     <!-- paper-header-panel must have an explicit height -->
@@ -106,22 +115,22 @@
             <template is="dom-repeat" items="[[questions]]" as="question">
               <neon-animatable>
                 <label>[[question.label]]</label>
-                <template is="dom-if" if="{{isEquals(question.answers[0].type, 'radio')}}">
+                <template is="dom-if" if="{{isEquals(question.answers.0.type, 'radio')}}">
                   <paper-radio-group>
                     <template is="dom-repeat" items="{{question.answers}}" as="answer">
-                      <paper-radio-button name="{{answer.id}}" value="{{answer.value}}">{{answer.text}}</paper-radio-button><br />
+                      <paper-radio-button value="{{answer.value}}">{{answer.text}}</paper-radio-button><br />
                     </template>
                   </paper-radio-group>
                 </template>
 
-                <template is="dom-if" if="{{!isEquals(question.answers[0].type, 'radio')}}">
+                <template is="dom-if" if="{{isNotEqual(question.answers.0.type, 'radio')}}">
                   <ul>
-                    <template is="dom-if" if="{{!isEquals(answer.type, 'radio')}}">
+                    <template is="dom-repeat" items="{{question.answers}}" as="answer">
                       <li>
-                        <template is="dom-if" if="{{isEquals(answer.type, 'check')}}">
+                        <template is="dom-if" if="{{isEquals(answer.type, 'checkbox')}}">
                           <paper-checkbox name="[[answer.id]]" value="[[answer.value]]">[[answer.text]]</paper-checkbox>
                         </template>
-                        <template is="dom-if" if="{{!isEquals(answer.type, 'check')}}">
+                        <template is="dom-if" if="{{isNotEqual(answer.type, 'checkbox')}}">
                           <paper-input class="short" name="[[answer.id]]" label="[[answer.text]]" value="[[answer.value]]" type="[[answer.type]]" id="[[answer.id]]"></paper-input>
                         </template>
                       </li>
@@ -131,16 +140,22 @@
               </neon-animatable>
             </template>
             <neon-animatable>
-              <label>FINE<br />Fai il submit!</label>
+              <label id="outroTxt"></label><br /><br />
+              <div style="text-align:center;">
+                <paper-button class="submit-btn" elevation="1" on-click="_formComplete">
+                  <iron-icon icon="save"></iron-icon>
+                  Salva le risposte al questionario
+                </paper-button>
+              </div>
             </neon-animatable>
           </neon-animated-pages>
         </form>
       </div>
       <div>
         <div class="horizontal" style="padding:2%;">
-          <div><paper-fab disabled="[[isPrevDisabled]]" icon="arrow-back" title="Prev" class="gray" on-tap="onPrevTap"></paper-fab></div>
+          <div><paper-fab disabled="[[isPrevDisabled]]" icon="arrow-back" title="Prev" class="gray" on-tap="_onPrevTap"></paper-fab></div>
           <div class="flexchild"></div>
-          <div><paper-fab disabled="[[isNextDisabled]]" icon="arrow-forward" title="Next" class="blue" on-tap="onNextTap"></paper-fab></div>
+          <div><paper-fab disabled="[[isNextDisabled]]" icon="arrow-forward" title="Next" class="blue" on-tap="_onNextTap"></paper-fab></div>
         </div>
       </div>
     </div>
@@ -161,6 +176,10 @@
         type : String,
         notify : true,
         value : ""
+      },
+      outroTxt : {
+        type : String,
+        observer: '_outroTxtChanged'
       },
       selected : {
         type : Number,
@@ -189,34 +208,46 @@
         value : []
       },
     },
-
+    // Class constructor
     ready: function() {
       this.totalQuestions = this.querySelectorAll('neon-animatable').length - 1;
     },
 
     isEquals : function(value, valueToEqual){
-      console.log(value, valueToEqual, value === valueToEqual);
       return value === valueToEqual;
+    },
+
+    isNotEqual : function(value, valueToDisequal){
+      return value !== valueToDisequal;
     },
 
     isGreaterThan : function(value, valueToEqual){
       return value < valueToEqual;
     },
 
-    onPrevTap : function() {
+    _outroTxtChanged : function(newText){
+      // WARNING: potential XSS vulnerability if `html` comes from an untrusted source
+      this.$.outroTxt.innerHTML = newText;
+    },
+    // Prev Tap button
+    _onPrevTap : function() {
       this.entryAnimation = 'slide-from-left-animation';
       this.exitAnimation = 'slide-right-animation';
       if (this.selected !== 0){
         this.selected = this.selected - 1;
       }
     },
-
-    onNextTap : function() {
+    // Next Tap button
+    _onNextTap : function() {
       this.entryAnimation = 'slide-from-right-animation';
       this.exitAnimation = 'slide-left-animation';
       if (this.selected !== (this.questions.length + 1)){
         this.selected = this.selected + 1;
       }
+    },
+    // function launched when the questionnaire is finished
+    _formComplete : function(){
+      console.log(this.$.form.serialize());
     }
   });
 </script>
