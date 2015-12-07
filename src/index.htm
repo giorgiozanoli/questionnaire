@@ -17,7 +17,7 @@
         @apply(--layout-vertical);
       }
     </style>
-    <script>
+    <script type="text/javascript">
       var questionList = [
         {
           id : '1',
@@ -43,10 +43,10 @@
           id : '3',
           label : 'Domanda numero 3',
           answers : [
-            { id : 100, text : 'Risposta I', value: '', type : 'number'},
-            { id : 100, text : 'Risposta L', value: '', type : 'number'},
-            { id : 100, text : 'Risposta M', value: '', type : 'number'},
-            { id : 100, text : 'Risposta N', value: '', type : 'number'}
+            { id : 100, text : 'Risposta I', value: '', type : 'text', customType : 'number'},
+            { id : 100, text : 'Risposta L', value: '', type : 'text', customType : 'number'},
+            { id : 100, text : 'Risposta M', value: '', type : 'text', customType : 'number'},
+            { id : 100, text : 'Risposta N', value: '', type : 'text', customType : 'number'}
           ]
         }
       ];
@@ -57,9 +57,14 @@
       logo-src="Bayer-Logo.svg"
       intro-txt="Caro Vet, stiamo conducendo un’indagine su come il Vet valuta i prodotti antiparassitari esterni in vista di strategie (di comunicazione?) future. Ti va di partecipare ad un breve questionario? (Anonimo, riservato …)"
       outro-txt="Il questionario è terminato!<br />Grazie per la partecipazione, ora premi il pulsante per confermare le risposte."
-      ></question-list>
+      >
+    </question-list>
     <script>
-      document.querySelector('question-list').questions = questionList;
+      (function(){
+        document.querySelector('question-list').addEventListener('initialized', function(){
+          this.questions = questionList;
+        });
+      })();
     </script>
   </body>
 </html>

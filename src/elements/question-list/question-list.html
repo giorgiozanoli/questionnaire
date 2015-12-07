@@ -112,31 +112,24 @@
             <neon-animatable>
               <label>[[introTxt]]</label>
             </neon-animatable>
-            <template is="dom-repeat" items="[[questions]]" as="question">
+            <template is="dom-repeat" items="{{questions}}" as="question">
               <neon-animatable>
                 <label>[[question.label]]</label>
-                <template is="dom-if" if="{{isEquals(question.answers.0.type, 'radio')}}">
-                  <paper-radio-group>
-                    <template is="dom-repeat" items="{{question.answers}}" as="answer">
-                      <paper-radio-button value="{{answer.value}}">{{answer.text}}</paper-radio-button><br />
-                    </template>
-                  </paper-radio-group>
-                </template>
-
-                <template is="dom-if" if="{{isNotEqual(question.answers.0.type, 'radio')}}">
-                  <ul>
-                    <template is="dom-repeat" items="{{question.answers}}" as="answer">
-                      <li>
-                        <template is="dom-if" if="{{isEquals(answer.type, 'checkbox')}}">
-                          <paper-checkbox name="[[answer.id]]" value="[[answer.value]]">[[answer.text]]</paper-checkbox>
-                        </template>
-                        <template is="dom-if" if="{{isNotEqual(answer.type, 'checkbox')}}">
-                          <paper-input class="short" name="[[answer.id]]" label="[[answer.text]]" value="[[answer.value]]" type="[[answer.type]]" id="[[answer.id]]"></paper-input>
-                        </template>
-                      </li>
-                    </template>
-                  </ul>
-                </template>
+                <ul>
+                  <template is="dom-repeat" items="{{question.answers}}" as="answer">
+                    <li>
+                      <template is="dom-if" if="{{isEqual(answer.type, 'radio')}}">
+                        <paper-radio-button on-change="_onRadioTap" value="[[answer.value]]">{{answer.text}}</paper-radio-button>
+                      </template>
+                      <template is="dom-if" if="{{isEqual(answer.type, 'checkbox')}}">
+                        <paper-checkbox name="[[answer.id]]" value="[[answer.value]]">[[answer.text]]</paper-checkbox>
+                      </template>
+                      <template is="dom-if" if="{{isEqual(answer.type, 'text')}}">
+                        <paper-input class="short" name="[[answer.id]]" label="[[answer.text]]" value="[[answer.value]]" type="[[answer.type]]" id="[[answer.id]]"></paper-input>
+                      </template>
+                    </li>
+                  </template>
+                </ul>
               </neon-animatable>
             </template>
             <neon-animatable>
@@ -159,7 +152,6 @@
         </div>
       </div>
     </div>
-    [[questions.length]]
   </template>
 </dom-module>
 
@@ -188,7 +180,7 @@
       },
       isPrevDisabled : {
         type : Boolean,
-        computed : 'isEquals(selected, 0)'
+        computed : 'isEqual(selected, 0)'
       },
       isNextDisabled : {
         type : Boolean,
@@ -208,12 +200,15 @@
         value : []
       },
     },
-    // Class constructor
-    ready: function() {
+
+    ready: function() {},
+
+    attached : function(){
       this.totalQuestions = this.querySelectorAll('neon-animatable').length - 1;
+      this.fire('initialized');
     },
 
-    isEquals : function(value, valueToEqual){
+    isEqual : function(value, valueToEqual){
       return value === valueToEqual;
     },
 
@@ -223,6 +218,10 @@
 
     isGreaterThan : function(value, valueToEqual){
       return value < valueToEqual;
+    },
+
+    _onRadioTap : function(e){
+      console.log(e.target);
     },
 
     _outroTxtChanged : function(newText){
