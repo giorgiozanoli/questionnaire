@@ -1,0 +1,101 @@
+<dom-module id="image-magnifier">
+    <template>
+        <style>
+            :host{
+                display: block;
+                margin:0 auto;
+            }
+            
+            #image-item {
+                border:0;
+                outline: none;
+                cursor: pointer;
+            }
+            
+            .image-zoom-container {
+                position:absolute;
+                left:0;
+                top: 0;
+                width:100%;
+                height: 100%;
+            }
+        </style>
+        
+        <div class="image-container">
+            <img id="image-item" src="[[imageSrc]]" width="[[imageWidth]]" height="[[imageHeight]]" on-tap="onTapImage" />
+        </div>
+    </template>    
+</dom-module>
+
+<script>
+    Polymer({
+        is: 'image-magnifier',
+        properties: {
+            imageSrc : {
+                type : String,
+                value : null
+            },
+            imageWidth : {
+                type : Number,
+                value : null
+            },
+            imageHeight : {
+                type : Number,
+                value : null
+            }
+        },
+        
+        ready : function(){
+            console.info('image-magnifier : ready!');
+            
+            if (document.querySelectorAll('.image-zoom-container').length === 0){
+                this.createZoomContainer();
+            }
+            
+            
+            
+            console.log(document.querySelectorAll('.image-zoom-container').length);
+        },
+        
+        createZoomContainer : function(){
+            var elem = document.createElement('div');
+            
+            elem.className = "image-zoom-container";
+            
+            elem.setAttribute('style', 'background-color: #fff; background-size:contain; opacity:0; position:absolute; top:0; left:0; width:0; height:0;')
+            document.body.appendChild(elem);
+            
+            elem.innerText = "Sticazzi!";
+        },
+        
+        onTapImage : function(){
+            
+            console.log(this);
+            
+            var bound = this.getBoundingClientRect();
+            
+            var zoomCont = document.querySelector('.image-zoom-container');
+            zoomCont.style.transition = "";
+            zoomCont.style.left = bound.left + 'px';
+            zoomCont.style.top  = bound.top + 'px';
+            zoomCont.style.width = bound.width + 'px';
+            zoomCont.style.height = bound.height + 'px';
+            zoomCont.style.backgroundImage = 'url(' + this.imageSrc + ')';            
+            
+            zoomCont.style.transition = "all 1.2s ease-in-out";
+            zoomCont.style.opacity = "1";
+            zoomCont.style.left = "1.5%";
+            zoomCont.style.top = "1.5%";
+            zoomCont.style.width = "97%";
+            zoomCont.style.height = "97%";
+            
+            
+            console.log(
+                this.getBoundingClientRect()
+            )
+            
+            console.info('you click me!', document.querySelectorAll('.image-zoom-container'));
+        }
+        
+    });
+</script>
